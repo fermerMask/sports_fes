@@ -1,73 +1,59 @@
-from flask import Flask, request, jsonify, render_template
-import sqlite3
-import os
-import uuid
-import random
+from flask import Flask, request, redirect, render_template, flash, session
 
 app = Flask(__name__)
+app.config["SECRET_KEY"] = 'secret_key'
+app.config["USERNAME"] = 'user'
+app.config["PASSWORD"] = 'pass'
 
-DATABASE = 'lottery.db'
-MAX_WINNERS = 20
-
-def get_db():
-    db = sqlite3.connect(DATABASE)
-    db.row_factory = sqlite3.Row
-    return db
-
-def init_db():
-    db = get_db()
-    with app.open_resource('schema.sql',mode='r') as f:
-        db.cursor().executescript(f.read())
-    
-    db.commit()
-    db.close()
-
-@app.before_request
-def setup_database():
-    if not os.path.exists(DATABASE):
-        init_db()
-    
 @app.route('/')
 def index():
-    return render_template('index.html')
+    if session.get("flag"):
+        return render_template('welcome.html',username=session["username"])
+    return redirect('/login')
 
-@app.route('/enter',methods=['POST'])
-def enter_lottery():
-    data = request.json
-    name = data.get('name')
+@app.route('/login',methods=['GET'])
+def login():
+    if session.get("flag"):
+        return redirect('/welcome')
+    return render_template('login.html')
 
-    print('受け取ったデータ:', data)
 
-    user_id = str(uuid.uuid4())
-    db = get_db()
+@app.route('/login',methods=['POST'])
+def login_post():
+    username = request.form["username"]
+    password = request.form["password"]
 
-    cursor = db.cursor()
-
-    try:
-        cursor.execute('BEGIN TRANSACTION')
-        cursor.execute('SELECT COUNT(*) FROM winners')
-        winner_count = cursor.fetchone()[0]
-
-        if winner_count >= MAX_WINNERS:
-            db.rollback()
-            return jsonify({'message': 'All winners have already been selected'}),400
-        
-        if random.random() > 0.5:
-            cursor.execute(('INSERT INTO winners (user_id, name) VALUES (?,?)'), (user_id,name))
-            db.commit()
-            return jsonify({'message': 'You have won!', 'user_id':user_id}),200
-        else:
-            db.commit()
-            return jsonify({'message': 'Sorry, you did not win this time.'}),200
-        
-    except Exception as e:
-        db.rollback()
-        return jsonify({'error':str(e)}),500
+    if username != app.config['USERNAME']:
+        flash('ユーザー名が異なります')
+    elif password != app.config['PASSWORD']:
+        flash('パスワードが異なります。')
+    else:
+        session['flag'] = True
+        session["username"] = username
+        return redirect('/welcome')
     
-    finally:
-        db.close()
+    return redirect('/login')
+
+@app.route('/welcome')
+def welcome():
+    if session.get("flag"):
+        return render_template('welcome.html',username=session["username"])
+    return redirect('/login')
+
+@app.route('/content')
+def contents():
+    if session.get("flag"):
+        return render_template('contents.html',username=session["username"])
+    return redirect('/login')
+
+@app.route('/logout')
+def logout():
+    session.pop('username',None)
+    session.pop('flag',None)
+    session["username"] = None
+    session['flag'] = False
+    flash('ログアウトしました')
+    return redirect("/login")
 
 if __name__ == '__main__':
-    init_db()
     app.run(debug=True)
-
