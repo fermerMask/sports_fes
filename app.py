@@ -1,9 +1,13 @@
 from flask import Flask, request, redirect, render_template, flash, session
+import sqlite3
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = 'secret_key'
-app.config["USERNAME"] = 'user'
-app.config["PASSWORD"] = 'pass'
+
+def get_db_connection():
+    conn = sqlite3.connect('users.db')
+    conn.row_factory = sqlite3.Row
+    return conn
 
 @app.route('/')
 def index():
@@ -11,6 +15,25 @@ def index():
         return render_template('welcome.html',username=session["username"])
     return redirect('/login')
 
+@app.route('/register',methods=['GET','POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+
+        conn = get_db_connection()
+
+        try:
+            conn.execute('INSERT INTO users (username, password) VALUES (?,?)',(username,password))
+            conn.commit()
+            flash('登録が完了しました。ログインしてください。')
+        except sqlite3.IntegrityError:
+            flash('そのユーザー名は既に使用されています。')
+            return redirect('/register')
+        
+        finally:
+            conn.close()
+            
 @app.route('/login',methods=['GET'])
 def login():
     if session.get("flag"):
@@ -23,16 +46,17 @@ def login_post():
     username = request.form["username"]
     password = request.form["password"]
 
-    if username != app.config['USERNAME']:
+    conn = get_db_connection()
+    user = conn.execute('SELECT * FROM users WHERE username = ? AND password = ?',(username,password)).fetchone()
+    conn.close()
+
+    if user is None:
         flash('ユーザー名が異なります')
-    elif password != app.config['PASSWORD']:
-        flash('パスワードが異なります。')
+        return redirect('/login')
     else:
         session['flag'] = True
         session["username"] = username
         return redirect('/welcome')
-    
-    return redirect('/login')
 
 @app.route('/welcome')
 def welcome():
