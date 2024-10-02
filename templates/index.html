@@ -1,160 +1,71 @@
 <!DOCTYPE html>
 <html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>越谷スポーツフェス</title>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <style>
-        /* グローバルスタイル */
-        body {
-            font-family: 'Comic Sans MS', cursive, sans-serif;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background: linear-gradient(135deg, #80c7ff, #ffebc1);
-            color: #333;
-            overflow: hidden;
-        }
-
-        h1 {
-            font-size: 3rem;
-            color: #ff6f61; /* マジック感を出す明るいピンク */
-            margin-bottom: 20px;
-            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
-        }
-
-        /* カードデザイン */
-        .container {
-            background-color: #fff;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            border-radius: 20px;
-            padding: 40px;
-            max-width: 500px;
-            text-align: center;
-            position: relative;
-            transition: all 0.3s ease;
-        }
-
-        .container:hover {
-            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
-        }
-
-        button {
-            background-color: #ffcc00;
-            color: #333;
-            border: none;
-            padding: 15px 30px;
-            border-radius: 25px;
-            font-size: 1.2rem;
-            cursor: pointer;
-            margin-top: 20px;
-            transition: background-color 0.3s ease;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        button:hover {
-            background-color: #ffdd57;
-        }
-
-        p {
-            font-size: 1.4rem;
-            margin: 15px 0;
-            color: #333;
-        }
-
-        /* クラッカーエフェクトの設定 */
-        .confetti {
-            position: absolute;
-            width: 10px;
-            height: 10px;
-            background-color: #ff4757;
-            animation: confetti-fall 2s ease-in-out infinite;
-        }
-
-        @keyframes confetti-fall {
-            0% { transform: translateY(0); }
-            100% { transform: translateY(600px) rotate(720deg); }
-        }
-
-        /* モバイル対応 */
-        @media (max-width: 600px) {
-            h1 {
-                font-size: 2.5rem;
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <title>抽選システム</title>
+        <style>
+            body {
+                font-family: Arial,sans-serif;
+                text-align: center;
+                margin-top: 50px;
             }
-            .container {
-                padding: 20px;
+            input {
+                padding: 10px;
+                font-size: 16px;
             }
             button {
                 padding: 10px 20px;
-                font-size: 1rem;
+                font-size: 16px;
+                margin-left: 10px;
+                cursor: pointer;
             }
-        }
-
-        /* 星のアニメーション背景 */
-        .star {
-            position: absolute;
-            width: 2px;
-            height: 2px;
-            background: white;
-            border-radius: 50%;
-            box-shadow: 0 0 10px 5px rgba(255, 255, 255, 0.5);
-            animation: twinkling 5s infinite;
-        }
-
-        @keyframes twinkling {
-            0%, 100% { opacity: 0.5; }
-            50% { opacity: 1; }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>バーチャルローイング抽選</h1>
-        <button id="drawButton">抽選する</button>
-        <p id="result">抽選結果がここに表示されます</p>
-        <p>残りの当たり人数: <span id="remaining">20</span></p>
-    </div>
-
-    <!-- 星のアニメーションを追加 -->
-    <script>
-        // 星をランダムに生成
-        function createStars(num) {
-            for (let i = 0; i < num; i++) {
-                let star = document.createElement('div');
-                star.classList.add('star');
-                star.style.left = Math.random() * 100 + 'vw';
-                star.style.top = Math.random() * 100 + 'vh';
-                star.style.animationDuration = Math.random() * 5 + 2 + 's';
-                document.body.appendChild(star);
+            .result {
+                margin-top: 20px;
+                font-size: 18px;
+                font-weight: bold;
             }
-        }
+        </style>
+    </head>
+    <body>
+        <h1>抽選システム</h1>
+        <p>名前を入力して抽選に参加しよう！</p>
 
-        createStars(50);
+        <form id="lotteryform">
+            <input type="text" id="name" placeholder="ユーザーネームを入力" required>
+            <button type="submit">抽選に参加</button>
+        </form>
 
-        // クラッカーエフェクトを追加する関数
-        function launchConfetti() {
-            for (let i = 0; i < 100; i++) {
-                let confetti = document.createElement('div');
-                confetti.classList.add('confetti');
-                confetti.style.left = Math.random() * 100 + 'vw';
-                confetti.style.backgroundColor = '#' + Math.floor(Math.random() * 16777215).toString(16);
-                document.body.appendChild(confetti);
+        <div class="result" id="result"></div>
 
-                // エフェクトが終わったら削除する
-                setTimeout(() => confetti.remove(), 2000);
-            }
-        }
+        <script>
+            document.getElementById('lotteryform').addEventListener('submit',function(event){
+                event.preventDefault();
+                const name = document.getElementById('name').value;
 
-        $('#drawButton').on('click', function() {
-            $.post('/draw', function(data) {
-                $('#result').text(data.result);
-                $('#remaining').text(data.remaining);
-            });
-        });
-    </script>
-</body>
+                fetch('/enter',{
+                    method:'POST',
+                    headers:{
+                        'Content-Type' : 'application/json'
+                    },
+                    body: JSON.stringify({ name : name })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const resultDiv = document.getElementById('result');
+                    if(data.message){
+                        resultDiv.textContent = data.message;
+                        resultDiv.style.color = 'green';
+                    }else if(data.error){
+                        resultDiv.textContent = data.color;
+                        resultDiv.style.color = 'red';
+                    }
+                 })
+                 .catch(error => {
+                    document.getElementById('result').textContent = 'エラーが発生しました。';
+                    document.getElementById('result').style.color = 'red';
+                 })
+            })
+        </script>
+    </body>
 </html>
