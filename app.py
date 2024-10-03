@@ -15,7 +15,7 @@ def index():
         return render_template('welcome.html',username=session["username"])
     return redirect('/login')
 
-@app.route('/register',methods=['GET','POST'])
+@app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
         username = request.form['username']
@@ -24,20 +24,24 @@ def register():
         conn = get_db_connection()
 
         try:
-            conn.execute('INSERT INTO users (username, password) VALUES (?,?)',(username,password))
+            conn.execute('INSERT INTO users (username, password) VALUES (?, ?)', (username, password))
             conn.commit()
             flash('登録が完了しました。ログインしてください。')
+            return redirect('/login')  # 登録成功後にログインページにリダイレクト
         except sqlite3.IntegrityError:
             flash('そのユーザー名は既に使用されています。')
-            return redirect('/register')
-        
+            return redirect('/register')  # エラー時は再度登録ページを表示
         finally:
             conn.close()
+    
+    # GETリクエストの場合は登録フォームを表示
+    return render_template('register.html')  # 登録フォームを返す
+
             
 @app.route('/login',methods=['GET'])
 def login():
     if session.get("flag"):
-        return redirect('/welcome')
+        return redirect('/login')
     return render_template('login.html')
 
 
@@ -61,7 +65,7 @@ def login_post():
 @app.route('/welcome')
 def welcome():
     if session.get("flag"):
-        return render_template('welcome.html',username=session["username"])
+        return render_template('index.html',username=session["username"])
     return redirect('/login')
 
 @app.route('/content')
