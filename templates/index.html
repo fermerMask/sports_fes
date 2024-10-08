@@ -10,14 +10,9 @@
                 text-align: center;
                 margin-top: 50px;
             }
-            input {
-                padding: 10px;
-                font-size: 16px;
-            }
             button {
                 padding: 10px 20px;
                 font-size: 16px;
-                margin-left: 10px;
                 cursor: pointer;
             }
             .result {
@@ -29,43 +24,40 @@
     </head>
     <body>
         <h1>抽選システム</h1>
-        <p>名前を入力して抽選に参加しよう！</p>
+        <p>抽選に参加しよう！</p>
 
         <form id="lotteryform">
-            <input type="text" id="name" placeholder="ユーザーネームを入力" required>
             <button type="submit">抽選に参加</button>
         </form>
 
         <div class="result" id="result"></div>
 
         <script>
-            document.getElementById('lotteryform').addEventListener('submit',function(event){
+            document.getElementById('lotteryform').addEventListener('submit', function(event) {
                 event.preventDefault();
-                const name = document.getElementById('name').value;
 
-                fetch('/enter',{
-                    method:'POST',
-                    headers:{
-                        'Content-Type' : 'application/json'
-                    },
-                    body: JSON.stringify({ name : name })
+                fetch('/enter', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
                 })
                 .then(response => response.json())
                 .then(data => {
                     const resultDiv = document.getElementById('result');
-                    if(data.message){
+                    if (data.message) {
                         resultDiv.textContent = data.message;
                         resultDiv.style.color = 'green';
-                    }else if(data.error){
-                        resultDiv.textContent = data.color;
+                    } else if (data.error) {
+                        resultDiv.textContent = data.error;
                         resultDiv.style.color = 'red';
                     }
-                 })
-                 .catch(error => {
+                })
+                .catch(error => {
                     document.getElementById('result').textContent = 'エラーが発生しました。';
                     document.getElementById('result').style.color = 'red';
-                 })
-            })
+                });
+            });
         </script>
     </body>
 </html>
