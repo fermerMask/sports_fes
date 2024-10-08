@@ -1,73 +1,125 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, redirect, render_template, flash, session, jsonify
 import sqlite3
-import os
-import uuid
 import random
 
 app = Flask(__name__)
+app.config["SECRET_KEY"] = 'secret_key'
 
-DATABASE = 'lottery.db'
-MAX_WINNERS = 20
+def get_db_connection():
+    conn = sqlite3.connect('users.db')
+    conn.row_factory = sqlite3.Row
+    return conn
 
-def get_db():
-    db = sqlite3.connect(DATABASE)
-    db.row_factory = sqlite3.Row
-    return db
+MAX_WINNERS = 20  # 最大当選者数
 
-def init_db():
-    db = get_db()
-    with app.open_resource('schema.sql',mode='r') as f:
-        db.cursor().executescript(f.read())
-    
-    db.commit()
-    db.close()
+def count_winners():
+    conn = get_db_connection()
+    winners_count = conn.execute('SELECT COUNT(*) FROM users WHERE result = "当たり"').fetchone()[0]
+    conn.close()
+    return winners_count
 
-@app.before_request
-def setup_database():
-    if not os.path.exists(DATABASE):
-        init_db()
-    
 @app.route('/')
 def index():
-    return render_template('index.html')
+    if session.get("flag"):
+        return render_template('welcome.html', username=session["username"])
+    return redirect('/login')
 
-@app.route('/enter',methods=['POST'])
-def enter_lottery():
-    data = request.json
-    name = data.get('name')
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
 
-    print('受け取ったデータ:', data)
+        conn = get_db_connection()
 
-    user_id = str(uuid.uuid4())
-    db = get_db()
-
-    cursor = db.cursor()
-
-    try:
-        cursor.execute('BEGIN TRANSACTION')
-        cursor.execute('SELECT COUNT(*) FROM winners')
-        winner_count = cursor.fetchone()[0]
-
-        if winner_count >= MAX_WINNERS:
-            db.rollback()
-            return jsonify({'message': 'All winners have already been selected'}),400
-        
-        if random.random() > 0.5:
-            cursor.execute(('INSERT INTO winners (user_id, name) VALUES (?,?)'), (user_id,name))
-            db.commit()
-            return jsonify({'message': 'You have won!', 'user_id':user_id}),200
-        else:
-            db.commit()
-            return jsonify({'message': 'Sorry, you did not win this time.'}),200
-        
-    except Exception as e:
-        db.rollback()
-        return jsonify({'error':str(e)}),500
+        try:
+            conn.execute('INSERT INTO users (username, password, result) VALUES (?, ?, ?)', (username, password, ''))
+            conn.commit()
+            flash('登録が完了しました。ログインしてください。')
+            return redirect('/login')
+        except sqlite3.IntegrityError:
+            flash('そのユーザー名は既に使用されています。')
+            return redirect('/register')
+        finally:
+            conn.close()
     
-    finally:
-        db.close()
+    return render_template('register.html')
+
+@app.route('/login', methods=['GET'])
+def login():
+    if session.get("flag"):
+        return redirect('/welcome')
+    return render_template('login.html')
+
+@app.route('/login', methods=['POST'])
+def login_post():
+    username = request.form["username"]
+    password = request.form["password"]
+
+    conn = get_db_connection()
+    user = conn.execute('SELECT * FROM users WHERE username = ? AND password = ?', (username, password)).fetchone()
+    conn.close()
+
+    if user is None:
+        flash('ユーザー名かパスワードが異なります')
+        return redirect('/login')
+    else:
+        session['flag'] = True
+        session["username"] = username
+        return redirect('/welcome')
+
+@app.route('/welcome')
+def welcome():
+    if session.get("flag"):
+        return render_template('index.html', username=session["username"])
+    return redirect('/login')
+
+@app.route('/logout')
+def logout():
+    session.pop('username', None)
+    session.pop('flag', None)
+    flash('ログアウトしました')
+    return redirect("/login")
+
+# 抽選エンドポイント
+@app.route('/enter', methods=['POST'])
+def enter_lottery():
+    if not session.get("flag"):
+        return jsonify({"error": "ログインが必要です"}), 403
+
+    username = session["username"]
+
+    conn = get_db_connection()
+    
+    # 現在ログイン中のユーザーの抽選結果を確認
+    user = conn.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
+
+    if user["result"] != '':
+        return redirect('')
+        return jsonify({"error": f"すでに抽選済みです: {user['result']}"})
+
+    # 当選者数を確認
+    current_winners = count_winners()
+
+    if current_winners >= MAX_WINNERS:
+        return jsonify({"error": "すでに当選者数が上限に達しました。"})
+
+    # 抽選結果の判定（50%の確率で当たり）
+    is_winner = random.choice([True, False])
+
+    if is_winner:
+        result = '当たり'
+        message = 'おめでとうございます！あなたは当選しました！'
+    else:
+        result = 'ハズレ'
+        message = '残念ながら、ハズレです。またチャレンジしてください。'
+
+    # 結果をデータベースに保存
+    conn.execute('UPDATE users SET result = ? WHERE username = ?', (result, username))
+    conn.commit()
+    conn.close()
+
+    return jsonify({"message": message})
 
 if __name__ == '__main__':
-    init_db()
     app.run(debug=True)
-
