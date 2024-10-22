@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>抽選画面</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: url('file:///Users/hoshinomiyayugo/Library/Mobile%20Documents/com~apple~CloudDocs/NTT/sports_fes/eviden/tyusen.jpg') no-repeat center center/cover; /* 背景画像を追加 */
+        }
+
+        .tyusen-container {
+            background-color: rgba(255, 255, 255, 0.8); /* 背景を半透明に */
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            width: 300px;
+        }
+
+        h2 {
+            color: #FF914D;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .tyusen-button {
+            width: 100%;
+            padding: 10px;
+            background-color:#FF914D;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .tyusen-button:hover {
+            background-color:#FF914D;
+        }
+    </style>
+</head>
+<body>
+    <div class="tyusen-container">
+        <h2>バーチャルローイング<br>体験抽選</h2>
+        <form action="/tyusen" method="post">
+            <button type="submit" class="tyusen-button">抽選する</button>
+        </form>
+    </div>
+</body>
+</html>
