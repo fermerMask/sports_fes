@@ -1,21 +1,23 @@
 from flask import Flask, request, redirect, render_template, flash, session, jsonify
-import sqlite3
+from supabase import create_client, Client
 import random
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = 'secret_key'
 
-def get_db_connection():
-    conn = sqlite3.connect('users.db')
-    conn.row_factory = sqlite3.Row
-    return conn
+# SupabaseのURLとキーを設定
+SUPABASE_URL = "https://vxmvhaazvkzvezovyvui.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ4bXZoYWF6dmt6dmV6b3Z5dnVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mjc4NDYyMTcsImV4cCI6MjA0MzQyMjIxN30.L_xHRbQFYY60tmbpXqS9KzFFxlESp2_sZk-PGkeSuVo"
+
+# Supabaseクライアントを初期化
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 MAX_WINNERS = 20  # 最大当選者数
 
 def count_winners():
-    conn = get_db_connection()
-    winners_count = conn.execute('SELECT COUNT(*) FROM users WHERE result = "当たり"').fetchone()[0]
-    conn.close()
+    # Supabaseから当選者数を取得
+    response = supabase.table('users').select('result').eq('result', '当たり').execute()
+    winners_count = len(response.data)
     return winners_count
 
 @app.route('/')
@@ -30,18 +32,14 @@ def register():
         username = request.form['username']
         password = request.form['password']
 
-        conn = get_db_connection()
-
         try:
-            conn.execute('INSERT INTO users (username, password, result) VALUES (?, ?, ?)', (username, password, ''))
-            conn.commit()
+            # Supabaseに新しいユーザーを登録
+            supabase.table('users').insert({'username': username, 'password': password, 'result': ''}).execute()
             flash('登録が完了しました。ログインしてください。')
             return redirect('/login')
-        except sqlite3.IntegrityError:
+        except Exception as e:
             flash('そのユーザー名は既に使用されています。')
             return redirect('/register')
-        finally:
-            conn.close()
     
     return render_template('register.html')
 
@@ -56,11 +54,10 @@ def login_post():
     username = request.form["username"]
     password = request.form["password"]
 
-    conn = get_db_connection()
-    user = conn.execute('SELECT * FROM users WHERE username = ? AND password = ?', (username, password)).fetchone()
-    conn.close()
+    # Supabaseからユーザー情報を取得
+    response = supabase.table('users').select('*').eq('username', username).eq('password', password).execute()
 
-    if user is None:
+    if len(response.data) == 0:
         flash('ユーザー名かパスワードが異なります')
         return redirect('/login')
     else:
@@ -89,13 +86,11 @@ def enter_lottery():
 
     username = session["username"]
 
-    conn = get_db_connection()
-    
-    # 現在ログイン中のユーザーの抽選結果を確認
-    user = conn.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
+    # Supabaseから現在ログイン中のユーザーの抽選結果を取得
+    response = supabase.table('user').select('*').eq('username', username).execute()
+    user = response.data[0]
 
     if user["result"] != '':
-        return redirect('')
         return jsonify({"error": f"すでに抽選済みです: {user['result']}"})
 
     # 当選者数を確認
@@ -114,10 +109,8 @@ def enter_lottery():
         result = 'ハズレ'
         message = '残念ながら、ハズレです。またチャレンジしてください。'
 
-    # 結果をデータベースに保存
-    conn.execute('UPDATE users SET result = ? WHERE username = ?', (result, username))
-    conn.commit()
-    conn.close()
+    # 結果をSupabaseに保存
+    supabase.table('users').update({'result': result}).eq('username', username).execute()
 
     return jsonify({"message": message})
 
