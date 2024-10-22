@@ -6,8 +6,6 @@ app = Flask(__name__)
 app.config["SECRET_KEY"] = 'secret_key'
 
 # SupabaseのURLとキーを設定
-SUPABASE_URL = "https://vxmvhaazvkzvezovyvui.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ4bXZoYWF6dmt6dmV6b3Z5dnVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mjc4NDYyMTcsImV4cCI6MjA0MzQyMjIxN30.L_xHRbQFYY60tmbpXqS9KzFFxlESp2_sZk-PGkeSuVo"
 
 # Supabaseクライアントを初期化
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
