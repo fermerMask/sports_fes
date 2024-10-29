@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>当選おめでとうございます！</title>
+    <style>
+        .container {
+            text-align: center;
+            margin-top: 50px;
+        }
+        img {
+            max-width: 300px;
+            height: auto;
+            margin: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>おめでとうございます！あなたは当選しました！</h1>
+        
+        <!-- チケット画像 -->
+        <img src="{{ url_for('static', filename='assets/ticket1.jpg') }}" alt="チケット画像">
+        
+        <!-- QRコード画像 -->
+        <h2>こちらのQRコードをスキャンしてください</h2>
+        <img src="{{ url_for('generate_qr') }}" alt="QRコード">
+    </div>
+</body>
+</html>
