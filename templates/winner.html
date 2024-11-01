@@ -4,27 +4,70 @@
     <meta charset="UTF-8">
     <title>当選おめでとうございます！</title>
     <style>
-        .container {
-            text-align: center;
-            margin-top: 50px;
+        body {
+            margin: 0;
         }
+
+        .bg {
+            animation: slide 3s ease-in-out infinite alternate;
+            background-image: linear-gradient(-60deg, #6c3 50%, #09f 50%);
+            bottom: 0;
+            left: -50%;
+            opacity: .5;
+            position: absolute;
+            right: -50%;
+            top: 0;
+            z-index: -1;
+        }
+
+        .bg2 {
+            animation-direction: alternate-reverse;
+            animation-duration: 4s;
+        }
+
+        .bg3 {
+            animation-duration: 5s;
+        }
+
+        .content {
+            background-color: rgba(255, 255, 255, .8);
+            border-radius: .25em;
+            box-shadow: 0 0 .25em rgba(0, 0, 0, .25);
+            box-sizing: border-box;
+            left: 50%;
+            padding: 10vmin;
+            position: fixed;
+            text-align: center;
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        @keyframes slide {
+            0% {
+                transform: translateX(-25%);
+            }
+            100% {
+                transform: translateX(25%);
+            }
+        }
+
         img {
-            max-width: 300px;
-            height: auto;
+            width: 200px; /* 画像の幅を指定 */
+            height: auto;  /* 高さを自動調整 */
             margin: 20px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>おめでとうございます！あなたは当選しました！</h1>
+    <div class="bg"></div>
+    <div class="bg bg2"></div>
+    <div class="bg bg3"></div>
+    <div class="content">
+        <h1>当選おめでとうございます！</h1>
         
         <!-- チケット画像 -->
         <img src="{{ url_for('static', filename='assets/ticket1.jpg') }}" alt="チケット画像">
         
-        <!-- QRコード画像 -->
-        <h2>こちらのQRコードをスキャンしてください</h2>
-        <img src="{{ url_for('generate_qr') }}" alt="QRコード">
     </div>
 </body>
 </html>

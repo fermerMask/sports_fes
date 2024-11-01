@@ -17,9 +17,15 @@ def index():
 @app.route('/draw',methods=['POST'])
 def draw():
     time.sleep(2)
+    
+    count = 0    
+    if count >= 20:
+        return(url_for('loser'))
+    
     is_winner = random.choice([True, False])
 
     if is_winner:
+        count += 1
         return redirect(url_for('winner'))
     else:
         return redirect(url_for('loser'))
