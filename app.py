@@ -11,6 +11,7 @@ MAX_WINNERS = 20  # 各部の当選上限人数
 
 
 PARTS = ["1部", "2部", "3部", "4部"]
+
 TICKET_IMAGES = {
     "1部": "ticket1.jpg",
     "2部": "ticket2.jpg",
